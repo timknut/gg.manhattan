@@ -1,7 +1,14 @@
-manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP", 
-							 cols=c("gray10", "gray60"), chrlabs=NULL, title= NULL,
+gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP", 
+							 cols=c("gray10", "gray60"), title= NULL,
 							 suggestiveline=-log10(1e-5), genomewideline=-log10(5e-8), 
-							 highlight=NULL, logp=TRUE, annotatePval = NULL, annotateTop = TRUE, ...) {
+							 logp=TRUE) {
+
+## base plot function. Must test and add several features
+# manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP", 
+# 							 cols=c("gray10", "gray60"), chrlabs=NULL, title= NULL,
+# 							 suggestiveline=-log10(1e-5), genomewideline=-log10(5e-8), 
+# 							 highlight=NULL, logp=TRUE, annotatePval = NULL, annotateTop = TRUE, ...) {
+
 	
 	# Not sure why, but package check will warn without this.
 	CHR=BP=P=index=NULL
@@ -22,7 +29,7 @@ manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP",
 	d=data.frame(CHR=x[[chr]], BP=x[[bp]], P=x[[p]])
 	
 	# If the input data frame has a SNP column, add it to the new data frame you're creating.
-	if (!is.null(x[[snp]])) d=transform(d, SNP=x[[snp]])
+#	if (!is.null(x[[snp]])) d=transform(d, SNP=x[[snp]])
 	
 	# Set positions, ticks, and labels for plotting
 	## Sort and keep only values where is numeric.
@@ -60,9 +67,8 @@ manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP",
 		## Uncomment the next two linex to plot single chr results in Mb
 		#options(scipen=999)
 		d$pos=d$BP/1e6
-		d$pos=d$BP
 		ticks=floor(length(d$pos))/2+1
-		xlabel = paste('Chromosome',unique(d$CHR),'position')
+		xlabel = paste('Chromosome',unique(d$CHR),'position(Mb)')
 		labs = ticks
 	} else { ## For multiple chromosomes
 		lastbase=0
@@ -87,17 +93,18 @@ manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP",
 	# Initialize plot
 	xmax = ceiling(max(d$pos) * 1.03)
 	xmin = floor(max(d$pos) * -0.03)
-	ylim = ylim(c(floor(min(d$logp)),ceiling(max(d$logp))))
+	ymin = floor(min(d$logp))
+	ymax = ceiling(max(d$logp))
 	mycols = rep(cols, nchr/2+1)
-	
-		if (numchroms==1) {
-			plot=qplot(pos/1000000,logp,data=d,ylab=expression(-log[10](italic(p))), 
-						  xlab=paste(xlabel,unique(d$CHR),"position", "Mbp"))
+		if (nchr==1) {
+			plot=qplot(pos,logp,data=d,ylab=expression(-log[10](italic(p))), 
+						  xlab=xlabel) + 
+				scale_y_continuous(breaks=seq(2,ymax+1,2), labels=seq(2,ymax+1,2), limits = c(ymin, ymax))
 		}   else {
 			plot=ggplot(d, aes(x = pos,y = logp)) 
 			plot=plot + geom_point(aes(colour=factor(CHR))) + ylab(expression(-log[10](italic(p))))
 			plot=plot+scale_x_continuous(name=xlabel, breaks=ticks, labels=(unique(d$CHR)))
-			if (logp) plot=plot+scale_y_continuous(breaks=1:maxy+1, labels=1:maxy+1)
+			if (logp) plot=plot+scale_y_continuous(breaks=seq(2,ymax+1,2), labels=seq(2,ymax+1,2), limits = c(ymin, ymax))
 			plot=plot+scale_colour_manual(values=mycols)
 		}
 		#if (annotate)   plot=plot + geom_point(data=d.annotate, colour=I("green3")) 
@@ -108,11 +115,8 @@ manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP",
 			axis.line=element_line(),
 			axis.line.x=element_blank(),
 			legend.position = "none"
-		) + ylim
+		)
 		if (suggestiveline) plot=plot+geom_hline(yintercept=suggestiveline,colour="blue", alpha=I(1/3))
 		if (genomewideline) plot=plot+geom_hline(yintercept=genomewideline,colour="red")
 		plot
-	}   else {
-		stop("Make sure your data frame contains columns CHR, BP, and P")
-	}
-}
+	}   
