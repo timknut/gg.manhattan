@@ -1,18 +1,18 @@
-gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP", 
-							 cols=c("gray10", "gray60"), title= NULL,
-							 suggestiveline=-log10(1e-5), genomewideline=-log10(5e-8), 
+gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP",
+							 cols=c("gray10", "gray60"), plot_title=NULL, chrlabs=NULL,
+							 suggestiveline=-log10(1e-5), genomewideline=-log10(5e-8),
 							 logp=TRUE) {
 
 ## base plot function. Must test and add several features
-# manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP", 
+# manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP",
 # 							 cols=c("gray10", "gray60"), chrlabs=NULL, title= NULL,
-# 							 suggestiveline=-log10(1e-5), genomewideline=-log10(5e-8), 
+# 							 suggestiveline=-log10(1e-5), genomewideline=-log10(5e-8),
 # 							 highlight=NULL, logp=TRUE, annotatePval = NULL, annotateTop = TRUE, ...) {
 
-	
+
 	# Not sure why, but package check will warn without this.
 	CHR=BP=P=index=NULL
-	
+
 	# Check for sensible dataset
 	## Make sure you have chr, bp and p columns.
 	if (!(chr %in% names(x))) stop(paste("Column", chr, "not found!"))
@@ -24,13 +24,13 @@ gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP",
 	if (!is.numeric(x[[chr]])) stop(paste(chr, "column should be numeric. Do you have 'X', 'Y', 'MT', etc? If so change to numbers and try again."))
 	if (!is.numeric(x[[bp]])) stop(paste(bp, "column should be numeric."))
 	if (!is.numeric(x[[p]])) stop(paste(p, "column should be numeric."))
-	
+
 	# Create a new data.frame with columns called CHR, BP, and P.
 	d=data.frame(CHR=x[[chr]], BP=x[[bp]], P=x[[p]])
-	
+
 	# If the input data frame has a SNP column, add it to the new data frame you're creating.
 #	if (!is.null(x[[snp]])) d=transform(d, SNP=x[[snp]])
-	
+
 	# Set positions, ticks, and labels for plotting
 	## Sort and keep only values where is numeric.
 	#d <- subset(d[order(d$CHR, d$BP), ], (P>0 & P<=1 & is.numeric(P)))
@@ -43,8 +43,8 @@ gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP",
 		d$logp <- d$P
 	}
 	d$pos=NA
-	
-	
+
+
 	# Fixes the bug where one chromosome is missing by adding a sequential index column.
 	d$index=NA
 	ind = 0
@@ -52,7 +52,7 @@ gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP",
 		ind = ind + 1
 		d[d$CHR==i,]$index = ind
 	}
-	
+
 	# This section sets up positions and ticks. Ticks should be placed in the
 	# middle of a chromosome. The a new pos column is added that keeps a running
 	# sum of the positions of each successive chromsome. For example:
@@ -87,9 +87,13 @@ gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP",
 		}
 		xlabel = 'Chromosome'
 		#labs = append(unique(d$CHR),'') ## I forgot what this was here for... if seems to work, remove.
-		labs <- unique(d$CHR)
+		if (!is.null(chrlabs)) {
+			labs <- chrlabs
+		} else {
+			labs <- unique(d$CHR)
+			}
 	}
-	
+
 	# Initialize plot
 	xmax = ceiling(max(d$pos) * 1.03)
 	xmin = floor(max(d$pos) * -0.03)
@@ -97,20 +101,20 @@ gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP",
 	ymax = ceiling(max(d$logp))
 	mycols = rep(cols, nchr/2+1)
 		if (nchr==1) {
-			plot=qplot(pos,logp,data=d,ylab=expression(-log[10](italic(p))), 
-						  xlab=xlabel) + 
+			plot=qplot(pos,logp,data=d,ylab=expression(-log[10](italic(p))),
+						  xlab=xlabel) +
 				scale_y_continuous(breaks=seq(2,ymax+1,2), labels=seq(2,ymax+1,2), limits = c(ymin, ymax))
 		}   else {
-			plot=ggplot(d, aes(x = pos,y = logp)) 
+			plot=ggplot(d, aes(x = pos,y = logp))
 			plot=plot + geom_point(aes(colour=factor(CHR))) + ylab(expression(-log[10](italic(p))))
-			plot=plot+scale_x_continuous(name=xlabel, breaks=ticks, labels=(unique(d$CHR)))
+			plot=plot+scale_x_continuous(name=xlabel, breaks=ticks, labels=labs)
 			if (logp) plot=plot+scale_y_continuous(breaks=seq(2,ymax+1,2), labels=seq(2,ymax+1,2), limits = c(ymin, ymax))
 			plot=plot+scale_colour_manual(values=mycols)
 		}
-		#if (annotate)   plot=plot + geom_point(data=d.annotate, colour=I("green3")) 
-		if (is.character(title)) plot=plot + ggtitle(title)
+		#if (annotate)   plot=plot + geom_point(data=d.annotate, colour=I("green3"))
+		if (!is.null(plot_title)) plot=plot + ggtitle(plot_title)
 		plot=plot + theme(
-			panel.background=element_blank(), 
+			panel.background=element_blank(),
 			panel.grid.minor=element_blank(),
 			axis.line=element_line(),
 			axis.line.x=element_blank(),
@@ -119,4 +123,4 @@ gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP",
 		if (suggestiveline) plot=plot+geom_hline(yintercept=suggestiveline,colour="blue", alpha=I(1/3))
 		if (genomewideline) plot=plot+geom_hline(yintercept=genomewideline,colour="red")
 		plot
-	}   
+	}
