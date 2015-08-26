@@ -99,16 +99,22 @@ gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP",
 	xmin = floor(max(d$pos) * -0.03)
 	ymin = floor(min(d$logp))
 	ymax = ceiling(max(d$logp))
+	if ((ymax %% 2) != 0 ) {
+		ymax = ymax + 1
+	}
 	mycols = rep(cols, nchr/2+1)
 		if (nchr==1) {
 			plot=qplot(pos,logp,data=d,ylab=expression(-log[10](italic(p))),
 						  xlab=xlabel) +
-				scale_y_continuous(breaks=seq(2,ymax+1,2), labels=seq(2,ymax+1,2), limits = c(ymin, ymax))
+				scale_y_continuous(breaks=seq(2,ymax,2), labels=seq(2,ymax,2),
+										 limits = c(ymin-0.5, ymax), expand = c(0,0))
 		}   else {
 			plot=ggplot(d, aes(x = pos,y = logp))
 			plot=plot + geom_point(aes(colour=factor(CHR))) + ylab(expression(-log[10](italic(p))))
 			plot=plot+scale_x_continuous(name=xlabel, breaks=ticks, labels=labs)
-			if (logp) plot=plot+scale_y_continuous(breaks=seq(2,ymax+1,2), labels=seq(2,ymax+1,2), limits = c(ymin, ymax))
+			if (logp) plot=plot+scale_y_continuous(breaks=seq(2,ymax,2), labels=seq(2,ymax,2),
+																limits = c(ymin-0.5, ymax), expand=c(0,0)) #+
+					#geom_blank(data = blank_data, aes(x,y))
 			plot=plot+scale_colour_manual(values=mycols)
 		}
 		#if (annotate)   plot=plot + geom_point(data=d.annotate, colour=I("green3"))
