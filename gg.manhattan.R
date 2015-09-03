@@ -1,4 +1,4 @@
-gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP",
+gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP", trait = "trait",
 							 cols=c("gray10", "gray60"), plot_title=NULL, chrlabs=NULL,
 							 suggestiveline=-log10(1e-5), genomewideline=-log10(5e-8),
 							 logp=TRUE) {
@@ -23,6 +23,7 @@ gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP",
 	if (!(p %in% names(x))) stop(paste("Column", p, "not found!"))
 	## warn if you don't have a snp column
 	if (!(snp %in% names(x))) warning(paste("No SNP column found. OK unless you're trying to highlight."))
+	if (!(trait %in% names(x))) warning(paste("No trait column found. OK unless you're trying to plot multiple traits."))
 	## make sure chr, bp, and p columns are numeric.
 	if (!is.numeric(x[[chr]])) stop(paste(chr, "column should be numeric. Do you have 'X', 'Y', 'MT', etc? If so change to numbers and try again."))
 	if (!is.numeric(x[[bp]])) stop(paste(bp, "column should be numeric."))
@@ -33,6 +34,8 @@ gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP",
 
 	# If the input data frame has a SNP column, add it to the new data frame you're creating.
 #	if (!is.null(x[[snp]])) d=transform(d, SNP=x[[snp]])
+	# If the input data frame has a SNP column, add it to the new data frame you're creating.
+	if (!is.null(x[[trait]])) d=transform(d, TRAIT=x[[trait]])
 
 	# Set positions, ticks, and labels for plotting
 	## Sort and keep only values where is numeric.
@@ -108,7 +111,7 @@ gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP",
 	mycols = rep(cols, nchr/2+1)
 		if (nchr==1) {
 			plot=qplot(pos,logp,data=d,ylab=expression(-log[10](italic(p))),
-						  xlab=xlabel) +
+						  xlab=xlabel, colour = TRAIT)  +
 				scale_y_continuous(breaks=seq(2,ymax,2), labels=seq(2,ymax,2),
 										 limits = c(ymin-0.5, ymax), expand = c(0,0))
 		}   else {
