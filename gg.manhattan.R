@@ -34,7 +34,7 @@ gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP", trait = "trait
 
 	# If the input data frame has a SNP column, add it to the new data frame you're creating.
 #	if (!is.null(x[[snp]])) d=transform(d, SNP=x[[snp]])
-	# If the input data frame has a SNP column, add it to the new data frame you're creating.
+	# If the input data frame has a trait column, add it to the new data frame you're creating.
 	if (!is.null(x[[trait]])) d=transform(d, TRAIT=x[[trait]])
 
 	# Set positions, ticks, and labels for plotting
@@ -110,9 +110,12 @@ gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP", trait = "trait
 	}
 	mycols = rep(cols, nchr/2+1)
 		if (nchr==1) {
-			plot=qplot(pos,logp,data=d,ylab=expression(-log[10](italic(p))),
-						  xlab=xlabel, colour = TRAIT)  +
-				scale_y_continuous(breaks=seq(2,ymax,2), labels=seq(2,ymax,2),
+			plot <- ggplot(data = d, aes(pos,logp),ylab=expression(-log[10](italic(p))),
+						  xlab=xlabel) + geom_point()
+			if (!is.null(d[[trait]]) && length(unique(d$TRAIT)) >= 2) {
+				plot <- plot + geom_point(aes(colour = TRAIT))
+			}
+			plot <- plot +	scale_y_continuous(breaks=seq(2,ymax,2), labels=seq(2,ymax,2),
 										 limits = c(ymin-0.5, ymax), expand = c(0,0))
 		}   else {
 			plot=ggplot(d, aes(x = pos,y = logp))
