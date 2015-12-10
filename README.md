@@ -5,9 +5,4 @@ Function for creating manhattan plots with [ggplot2](https://github.com/hadley/g
 - [ ] Write example code
 - [ ] Add functionality to be able to plot genes i regional plot.
 - [ ] Make into package
-
-
-
-
-
-
+- [ ] Update functions to reflect http://www.r-bloggers.com/automate-the-boring-stuff-ggplot2/ 
