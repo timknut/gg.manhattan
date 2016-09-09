@@ -1,7 +1,7 @@
 gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP", trait = "trait",
 							 cols=c("gray10", "gray60"), plot_title=NULL, chrlabs=NULL,
 							 suggestiveline=-log10(1e-5), genomewideline=-log10(5e-8),
-							 logp=TRUE) {
+							 logp=TRUE, point_size = 15) {
 
 ## base plot function. Must test and add several features
 # manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP",
@@ -116,7 +116,7 @@ gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP", trait = "trait
 										 limits = c(ymin-0.5, ymax), expand = c(0,0))
 		}   else {
 			plot=ggplot(d, aes(x = pos,y = logp))
-			plot=plot + geom_point(aes(colour=factor(CHR))) + ylab(expression(-log[10](italic(p))))
+			plot=plot + geom_point(aes(colour=factor(CHR)), size = point_size) + ylab(expression(-log[10](italic(p))))
 			plot=plot+scale_x_continuous(name=xlabel, breaks=ticks, labels=labs)
 			if (logp) plot=plot+scale_y_continuous(breaks=seq(2,ymax,2), labels=seq(2,ymax,2),
 																limits = c(ymin-0.5, ymax), expand=c(0,0)) # expand ensures pretty y-axis

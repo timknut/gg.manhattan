@@ -1,0 +1,45 @@
+---
+title: "Untitled"
+author: "Tim Knutsen"
+date: "15.9.2015"
+output: html_document
+---
+
+# gg.manhattan
+Function for creating manhattan plots with [ggplot2](https://github.com/hadley/ggplot2). Code is based on [Stephen Turner's qqman](https://github.com/stephenturner/qqman).
+
+## To do:
+- [ ] Write example code
+- [ ] Add functionality to be able to plot genes i regional plot.
+- [ ] Make into package
+
+## Installation
+Download with git
+```bash
+git clone git@github.com:timknut/gg.manhattan.git
+```
+source from within R
+```{r, eval=FALSE}
+source("path/to/folder/gg.manhattan.R")
+```
+
+```{r, echo=FALSE}
+source("~/Projects/R-packages/gg.manhattan/gg.manhattan.R")
+```
+
+## Basic Usage
+```{r}
+## get example data set.
+if (suppressMessages(!require(qqman))) install.packages("qqman")
+gg.manhattan(gwasResults, plot_title = "GWAS")
+```
+### plot multippel traits.
+```{r}
+df <- gwasResults
+df$trait <- c("trait_1", "trait_2")
+df$BP <- df$BP*1e6
+gg.manhattan(subset(df, CHR == 1)) # in same plot
+gg.manhattan(df) + facet_grid(~ trait, scales = "free") # in same plot
+
+```
+
