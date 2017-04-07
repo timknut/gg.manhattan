@@ -1,21 +1,19 @@
 gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP", trait = "trait",
-							 cols=c("gray10", "gray60"), plot_title=NULL, chrlabs=NULL,
-							 suggestiveline=-log10(1e-5), genomewideline=-log10(5e-8),
-							 logp=TRUE, point_size = 15) {
-
-## base plot function. Must test and add several features
-# manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP",
-# 							 cols=c("gray10", "gray60"), chrlabs=NULL, title= NULL,
-# 							 suggestiveline=-log10(1e-5), genomewideline=-log10(5e-8),
-# 							 highlight=NULL, logp=TRUE, annotatePval = NULL, annotateTop = TRUE, ...) {
-
-
-	# Require ggplot2, install if not present in labrary.
-	if (!require(ggplot2)) install.packages("ggpplot2")
-
-	# Not sure why, but package check will warn without this.
+								 cols=c("gray10", "gray60"), plot_title=NULL, chrlabs=NULL,
+								 suggestiveline=-log10(1e-5), genomewideline=-log10(5e-8),
+								 logp=TRUE, point_size = 2, facet_traits = FALSE, facet_scale = "fixed",
+								 facet_labels = NULL) {
+	
+	## base plot function. Must test and add several features
+	# manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP",
+	# 							 cols=c("gray10", "gray60"), chrlabs=NULL, title= NULL,
+	# 							 suggestiveline=-log10(1e-5), genomewideline=-log10(5e-8),
+	# 							 highlight=NULL, logp=TRUE, annotatePval = NULL, annotateTop = TRUE, ...) {
+	
+	library(ggplot2) # Import when making into package. 
+	# Package check will warn without this.
 	CHR=BP=P=index=NULL
-
+	
 	# Check for sensible dataset
 	## Make sure you have chr, bp and p columns.
 	if (!(chr %in% names(x))) stop(paste("Column", chr, "not found!"))
@@ -28,15 +26,15 @@ gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP", trait = "trait
 	if (!is.numeric(x[[chr]])) stop(paste(chr, "column should be numeric. Do you have 'X', 'Y', 'MT', etc? If so change to numbers and try again."))
 	if (!is.numeric(x[[bp]])) stop(paste(bp, "column should be numeric."))
 	if (!is.numeric(x[[p]])) stop(paste(p, "column should be numeric."))
-
+	
 	# Create a new data.frame with columns called CHR, BP, and P.
 	d=data.frame(CHR=x[[chr]], BP=x[[bp]], P=x[[p]])
-
+	
 	# If the input data frame has a SNP column, add it to the new data frame you're creating.
-#	if (!is.null(x[[snp]])) d=transform(d, SNP=x[[snp]])
+	#	if (!is.null(x[[snp]])) d=transform(d, SNP=x[[snp]])
 	# If the input data frame has a SNP column, add it to the new data frame you're creating.
 	if (!is.null(x[[trait]])) d=transform(d, TRAIT=x[[trait]])
-
+	
 	# Set positions, ticks, and labels for plotting
 	## Sort and keep only values where is numeric.
 	#d <- subset(d[order(d$CHR, d$BP), ], (P>0 & P<=1 & is.numeric(P)))
@@ -49,8 +47,8 @@ gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP", trait = "trait
 		d$logp <- d$P
 	}
 	d$pos=NA
-
-
+	
+	
 	# Fixes the bug where one chromosome is missing by adding a sequential index column.
 	d$index=NA
 	ind = 0
@@ -58,7 +56,7 @@ gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP", trait = "trait
 		ind = ind + 1
 		d[d$CHR==i,]$index = ind
 	}
-
+	
 	# This section sets up positions and ticks. Ticks should be placed in the
 	# middle of a chromosome. The a new pos column is added that keeps a running
 	# sum of the positions of each successive chromsome. For example:
@@ -75,6 +73,11 @@ gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP", trait = "trait
 		ticks=floor(length(d$pos))/2+1
 		xlabel = paste('Chromosome',unique(d$CHR),'position(Mb)')
 		labs = ticks
+		if(facet_traits){
+			legend_pos = "none"
+		} else {
+			legend_pos = "right"
+		}
 	} else { ## For multiple chromosomes
 		lastbase=0
 		ticks=NULL
@@ -96,9 +99,9 @@ gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP", trait = "trait
 			labs <- chrlabs
 		} else {
 			labs <- unique(d$CHR)
-			}
+		}
 	}
-
+	
 	# Initialize plot
 	xmax = ceiling(max(d$pos) * 1.03)
 	xmin = floor(max(d$pos) * -0.03)
@@ -109,29 +112,70 @@ gg.manhattan <- function(x, chr="CHR", bp="BP", p="P", snp="SNP", trait = "trait
 		ymax = ymax + 1
 	}
 	mycols = rep(cols, nchr/2+1)
-		if (nchr==1) {
-			plot=qplot(pos,logp,data=d,ylab=expression(-log[10](italic(p))),
-						  xlab=xlabel, colour = TRAIT)  +
+	if (nchr==1) {
+		if (!facet_traits){
+			plot <- ggplot(d, aes(pos, logp, colour = TRAIT)) + 
+				geom_point(size = point_size) + 
+				ylab(expression(-log[10](italic(p)))) +
+				xlab(xlabel)  +
 				scale_y_continuous(breaks=seq(2,ymax,2), labels=seq(2,ymax,2),
 										 limits = c(ymin-0.5, ymax), expand = c(0,0))
-		}   else {
-			plot=ggplot(d, aes(x = pos,y = logp))
-			plot=plot + geom_point(aes(colour=factor(CHR)), size = point_size) + ylab(expression(-log[10](italic(p))))
-			plot=plot+scale_x_continuous(name=xlabel, breaks=ticks, labels=labs)
-			if (logp) plot=plot+scale_y_continuous(breaks=seq(2,ymax,2), labels=seq(2,ymax,2),
-																limits = c(ymin-0.5, ymax), expand=c(0,0)) # expand ensures pretty y-axis
-			plot=plot+scale_colour_manual(values=mycols)
+		} else {
+			plot=ggplot(aes(pos,logp),data=d) + 
+				geom_point(size = point_size) + 
+				ylab(expression(-log[10](italic(p)))) +
+				xlab(xlabel)  +
+				scale_y_continuous(breaks=seq(2,ymax,2), labels=seq(2,ymax,2),
+										 limits = c(ymin-0.5, ymax), expand = c(0,0))
+			if(is.null(facet_labels)){
+				plot <- plot + facet_wrap(~TRAIT, ncol = 1, 
+												  strip.position = "right", 
+												  scales = facet_scale)
+			} else {
+				plot <- plot + facet_wrap(~TRAIT, ncol = 1, 
+												  strip.position = "right", 
+												  scales = facet_scale,
+												  labeller = labeller(TRAIT = facet_labels))
+			}
 		}
-		#if (annotate)   plot=plot + geom_point(data=d.annotate, colour=I("green3"))
-		if (!is.null(plot_title)) plot=plot + ggtitle(plot_title)
-		plot=plot + theme(
-			panel.background=element_blank(),
-			panel.grid.minor=element_blank(),
-			axis.line=element_line(),
-			axis.line.x=element_blank(),
-			legend.position = "none"
-		)
-		if (suggestiveline) plot=plot+geom_hline(yintercept=suggestiveline,colour="blue", alpha=I(1/3))
-		if (genomewideline) plot=plot+geom_hline(yintercept=genomewideline,colour="red")
-		plot
+	}   else {
+		legend_pos = "none"
+		plot=ggplot(d, aes(x = pos,y = logp))
+		plot=plot + geom_point(aes(colour=factor(CHR)), size = point_size) + 
+			ylab(expression(-log[10](italic(p)))) + 
+			scale_x_continuous(name=xlabel, 
+									 breaks=ticks, 
+									 labels=labs)
+		if (logp) plot=plot+scale_y_continuous(breaks=seq(2,ymax,2), labels=seq(2,ymax,2),
+															limits = c(ymin-0.5, ymax), expand=c(0,0)) # expand ensures pretty y-axis
+		plot=plot+scale_colour_manual(values=mycols)
+		if (facet_traits) {
+			if(!is.null(facet_labels)){
+				plot <- plot + 
+			facet_wrap(~TRAIT, ncol = 1, 
+						  strip.position = "right", 
+						  scales = facet_scale, 
+						  labeller = labeller(TRAIT = facet_labels))
+				} else {
+				plot <- plot + 
+					facet_wrap(~TRAIT, ncol = 1, 
+								  strip.position = "right", 
+								  scales = facet_scale)	
+			}
+			}
 	}
+	#if (annotate)   plot=plot + geom_point(data=d.annotate, colour=I("green3"))
+	if (!is.null(plot_title)) plot=plot + ggtitle(plot_title)
+	plot=plot + theme(
+		panel.background=element_blank(),
+		panel.grid.minor=element_blank(),
+		axis.line=element_line(),
+		# axis.line.x=element_blank(), # Uncomment for removing x.axis line
+		legend.position = legend_pos,
+		axis.text = element_text(size = 6)
+	)
+	if (suggestiveline) plot=plot+geom_hline(yintercept=suggestiveline,colour="blue", alpha=I(1/3))
+	if (genomewideline) plot=plot+geom_hline(yintercept=genomewideline,colour="red")
+	
+	plot
+}
